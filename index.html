@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ось — 3D-демо</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f2ee;
+    --surface: #ebe8e2;
+    --text: #151515;
+    --muted: #5c5a56;
+    --line: #d8d4cc;
+    --accent: #1d3a6e;
+    --on-accent: #ffffff;
+
+    --font-display: "Cormorant Garamond", Georgia, serif;
+    --font-body: "Manrope", system-ui, sans-serif;
+
+    --fs-14: 14px; --fs-16: 16px; --fs-18: 18px; --fs-22: 22px;
+    --fs-28: 28px; --fs-36: 36px; --fs-48: 48px; --fs-hero: clamp(44px, 5.4vw, 80px);
+
+    --s-4: 4px; --s-8: 8px; --s-12: 12px; --s-16: 16px; --s-24: 24px;
+    --s-32: 32px; --s-48: 48px; --s-64: 64px; --s-96: 96px;
+
+    --radius: 999px;
+    --radius-sm: 6px;
+    --container: 1280px;
+    --ease: cubic-bezier(.2,.7,.1,1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-16);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+
+  .container { max-width: var(--container); margin: 0 auto; padding: 0 var(--s-32); }
+
+  /* Header */
+  header {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  }
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 80px;
+  }
+  .logo {
+    font-family: var(--font-display); font-weight: 600; font-size: var(--fs-28);
+    letter-spacing: .02em; text-decoration: none;
+  }
+  .nav-links { display: flex; gap: var(--s-32); font-size: var(--fs-14); }
+  .nav-links a { text-decoration: none; color: var(--muted); transition: color .3s; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* Hero */
+  .hero {
+    position: relative; min-height: 100vh; min-height: 100svh;
+    display: grid; grid-template-columns: 6fr 6fr; align-items: center;
+    max-width: var(--container); margin: 0 auto; padding: 96px var(--s-32) var(--s-48);
+  }
+  .hero-text { position: relative; z-index: 2; }
+  .eyebrow {
+    font-size: var(--fs-14); color: var(--muted); letter-spacing: .08em;
+    margin-bottom: var(--s-24);
+  }
+  h1 {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: var(--fs-hero); line-height: .98; letter-spacing: -.01em;
+    margin-bottom: var(--s-32);
+  }
+  h1 .line { display: block; overflow: hidden; padding-bottom: .06em; }
+  h1 .line span {
+    display: inline-block; transform: translateY(110%);
+    animation: rise 1.2s var(--ease) forwards;
+  }
+  h1 .line:nth-child(2) span { animation-delay: .12s; }
+  h1 .line:nth-child(3) span { animation-delay: .24s; }
+  @keyframes rise { to { transform: translateY(0); } }
+
+  .lead { font-size: var(--fs-18); color: var(--muted); max-width: 420px; margin-bottom: var(--s-32); }
+
+  .fade-in { opacity: 0; animation: fade 1s var(--ease) .6s forwards; }
+  @keyframes fade { to { opacity: 1; } }
+
+  .variants { display: flex; gap: var(--s-12); margin-bottom: var(--s-32); flex-wrap: wrap; }
+  .variant {
+    display: flex; align-items: center; gap: var(--s-8);
+    background: transparent; border: 1px solid var(--line); border-radius: var(--radius);
+    padding: var(--s-8) var(--s-16) var(--s-8) var(--s-8);
+    font: 500 var(--fs-14) var(--font-body); color: var(--text); cursor: pointer;
+    transition: border-color .3s, background .3s;
+  }
+  .variant:hover { border-color: var(--text); }
+  .variant[aria-pressed="true"] { border-color: var(--text); background: var(--surface); }
+  .swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+
+  .price-row { display: flex; align-items: center; gap: var(--s-24); flex-wrap: wrap; }
+  .price { font-family: var(--font-display); font-size: var(--fs-36); font-weight: 500; }
+  .btn {
+    display: inline-flex; align-items: center; gap: var(--s-12);
+    background: var(--accent); color: var(--on-accent);
+    border: 0; border-radius: var(--radius);
+    padding: var(--s-16) var(--s-32);
+    font: 500 var(--fs-16) var(--font-body); text-decoration: none; cursor: pointer;
+    transition: transform .4s var(--ease), background .3s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn svg { transition: transform .4s var(--ease); }
+  .btn:hover svg { transform: translateX(4px); }
+
+  .stage {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 64%;
+    cursor: grab; touch-action: pan-y;
+  }
+  .stage.dragging { cursor: grabbing; }
+  .stage canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 1.4s var(--ease); }
+  .stage.ready canvas { opacity: 1; }
+
+  .hint {
+    position: absolute; left: 50%; bottom: var(--s-48); transform: translateX(-50%);
+    display: flex; align-items: center; gap: var(--s-8);
+    font-size: var(--fs-14); color: var(--muted);
+    pointer-events: none; transition: opacity .6s;
+  }
+  .hint.hidden { opacity: 0; }
+
+  .readout {
+    position: absolute; right: var(--s-32); top: 50%; transform: translateY(-50%);
+    font-size: var(--fs-14); color: var(--muted); writing-mode: vertical-rl;
+    letter-spacing: .1em; pointer-events: none;
+  }
+
+  /* Sections */
+  section { padding: var(--s-96) 0; }
+  .split {
+    display: grid; grid-template-columns: 5fr 7fr; gap: var(--s-64); align-items: start;
+    border-top: 1px solid var(--line); padding-top: var(--s-48);
+  }
+  .label { font-size: var(--fs-14); color: var(--muted); letter-spacing: .08em; }
+  h2 {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: clamp(36px, 4.4vw, 64px); line-height: 1.02; margin-bottom: var(--s-24);
+  }
+  .body { font-size: var(--fs-18); color: var(--muted); max-width: 560px; }
+
+  .specs { list-style: none; margin-top: var(--s-48); }
+  .specs li {
+    display: grid; grid-template-columns: 1fr auto; gap: var(--s-24);
+    padding: var(--s-16) 0; border-bottom: 1px solid var(--line);
+    font-size: var(--fs-16);
+  }
+  .specs li span:first-child { color: var(--muted); }
+  .specs li span:last-child { font-weight: 500; }
+
+  .reveal { opacity: 0; transform: translateY(24px); }
+
+  .cta {
+    text-align: left; padding: var(--s-96) 0 var(--s-64);
+  }
+  .cta-inner {
+    display: flex; justify-content: space-between; align-items: end; gap: var(--s-48);
+    border-top: 1px solid var(--line); padding-top: var(--s-48); flex-wrap: wrap;
+  }
+  .cta h2 { max-width: 760px; margin: 0; }
+
+  footer { padding: var(--s-32) 0 var(--s-48); font-size: var(--fs-14); color: var(--muted); }
+  .foot { display: flex; justify-content: space-between; gap: var(--s-24); flex-wrap: wrap; }
+
+  .fallback {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    color: var(--muted); font-size: var(--fs-14); text-align: center; padding: var(--s-32);
+  }
+
+  @media (max-width: 900px) {
+    .container { padding: 0 var(--s-24); }
+    .nav-links { display: none; }
+    .hero {
+      grid-template-columns: 1fr; padding: 80px var(--s-24) var(--s-48);
+      min-height: auto;
+    }
+    .stage { position: relative; width: auto; height: 62vh; margin: 0 calc(var(--s-24) * -1); order: -1; }
+    .readout { display: none; }
+    .hint { bottom: var(--s-16); }
+    .split { grid-template-columns: 1fr; gap: var(--s-24); }
+    section { padding: var(--s-64) 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    h1 .line span, .fade-in { animation: none; transform: none; opacity: 1; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<header>
+  <div class="container nav">
+    <a class="logo" href="#top">Ось</a>
+    <nav class="nav-links">
+      <a href="#details">Детали</a>
+      <a href="#specs">Характеристики</a>
+      <a href="#order">Заказ</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero" id="hero">
+    <div class="hero-text">
+      <p class="eyebrow fade-in">МОДЕЛЬ 01 · АВТОМАТИЧЕСКИЙ КАЛИБР</p>
+      <h1>
+        <span class="line"><span>Время,</span></span>
+        <span class="line"><span>которое хочется</span></span>
+        <span class="line"><span>держать в руках</span></span>
+      </h1>
+      <p class="lead fade-in">Стальной корпус 40 мм, сапфировое стекло и браслет из 316L. Выберите отделку — модель обновится сразу.</p>
+
+      <div class="variants fade-in" role="group" aria-label="Отделка">
+        <button class="variant" data-v="steel" aria-pressed="true"><span class="swatch" style="background:linear-gradient(135deg,#e8e9eb,#a9adb3)"></span>Сталь</button>
+        <button class="variant" data-v="gold" aria-pressed="false"><span class="swatch" style="background:linear-gradient(135deg,#ead3a0,#b48a45)"></span>Золото</button>
+        <button class="variant" data-v="black" aria-pressed="false"><span class="swatch" style="background:linear-gradient(135deg,#3a3a3c,#111)"></span>Чёрный DLC</button>
+      </div>
+
+      <div class="price-row fade-in">
+        <span class="price" id="price">84 000 ₽</span>
+        <a class="btn" href="#order">Оставить заявку
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="stage" id="stage" aria-label="3D-модель часов. Зажмите и вращайте.">
+      <div class="fallback" id="fallback">3D не загрузилось в этом браузере.</div>
+      <div class="hint" id="hint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" stroke="currentColor" stroke-width="1.5"/></svg>
+        Зажмите и вращайте
+      </div>
+      <div class="readout" id="readout">0° · 0°</div>
+    </div>
+  </div>
+
+  <section id="details">
+    <div class="container split">
+      <p class="label reveal">01 — ДЕТАЛИ</p>
+      <div>
+        <h2 class="reveal">Каждая грань собрана, чтобы её рассматривали</h2>
+        <p class="body reveal">Поверните часы боком — увидите заводную головку с насечкой. Переверните — звенья браслета повторяют изгиб запястья. Стрелки на модели идут по вашему текущему времени.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="specs">
+    <div class="container split">
+      <p class="label reveal">02 — ХАРАКТЕРИСТИКИ</p>
+      <div>
+        <h2 class="reveal">Коротко о главном</h2>
+        <ul class="specs">
+          <li class="reveal"><span>Диаметр корпуса</span><span>40 мм</span></li>
+          <li class="reveal"><span>Толщина</span><span>11 мм</span></li>
+          <li class="reveal"><span>Стекло</span><span>Сапфир, антиблик</span></li>
+          <li class="reveal"><span>Водозащита</span><span>100 м</span></li>
+          <li class="reveal"><span>Браслет</span><span>Сталь 316L</span></li>
+          <li class="reveal"><span>Запас хода</span><span>42 часа</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="order">
+    <div class="container cta-inner">
+      <h2 class="reveal">Примерьте до покупки — привезём в шоурум или домой</h2>
+      <a class="btn reveal" href="#top">Записаться на примерку
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5"/></svg>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container foot">
+    <span>Ось, 2026</span>
+    <span>Демо-страница: бренд, цены и характеристики вымышлены.</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const stage = document.getElementById('stage');
+const hint = document.getElementById('hint');
+const readout = document.getElementById('readout');
+
+/* ---------- Плавный скролл + анимации секций ---------- */
+let lenis = null;
+try {
+  if (window.Lenis && !reduceMotion) {
+    lenis = new window.Lenis({ lerp: 0.09 });
+    function raf(t) { lenis.raf(t); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const el = document.querySelector(a.getAttribute('href'));
+        if (el) { e.preventDefault(); lenis.scrollTo(el, { offset: -20 }); }
+      });
+    });
+  }
+} catch (e) { lenis = null; }
+
+let scrollTilt = 0;
+if (window.gsap && window.ScrollTrigger) {
+  gsap.registerPlugin(ScrollTrigger);
+  if (lenis) lenis.on('scroll', ScrollTrigger.update);
+  if (!reduceMotion) {
+    gsap.utils.toArray('.reveal').forEach(el => {
+      gsap.to(el, {
+        opacity: 1, y: 0, duration: 1.1, ease: 'expo.out',
+        scrollTrigger: { trigger: el, start: 'top 88%' }
+      });
+    });
+  }
+  ScrollTrigger.create({
+    trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true,
+    onUpdate: s => { scrollTilt = s.progress; }
+  });
+} else {
+  document.querySelectorAll('.reveal').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+}
+
+/* ---------- 3D ---------- */
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+} catch (e) {
+  document.getElementById('fallback').style.display = 'flex';
+  hint.style.display = 'none';
+  throw e;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+camera.position.set(0, 0.8, 13.5);
+
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(4, 6, 8);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+rim.position.set(-6, -2, -6);
+scene.add(rim);
+
+/* Материалы */
+const metal = new THREE.MeshPhysicalMaterial({ color: 0xc6c9cd, metalness: 1, roughness: 0.22, clearcoat: 0.3 });
+const metalBrushed = new THREE.MeshPhysicalMaterial({ color: 0xc6c9cd, metalness: 1, roughness: 0.42 });
+const dialMat = new THREE.MeshPhysicalMaterial({ color: 0x1b2a4a, metalness: 0, roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.2, envMapIntensity: 0.6 });
+const indexMat = new THREE.MeshPhysicalMaterial({ color: 0xf2f2f2, metalness: 1, roughness: 0.15 });
+const secondMat = new THREE.MeshStandardMaterial({ color: 0xc4532f, metalness: 0.2, roughness: 0.4 });
+const glassMat = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff, metalness: 0, roughness: 0, transparent: true, opacity: 0.12,
+  clearcoat: 1, clearcoatRoughness: 0, envMapIntensity: 1.5
+});
+
+const VARIANTS = {
+  steel: { metal: 0xc6c9cd, rough: 0.22, dial: 0x1b2a4a, index: 0xf2f2f2, price: '84 000 ₽' },
+  gold:  { metal: 0xe0b46c, rough: 0.2,  dial: 0xefe9dc, index: 0xc99a52, price: '196 000 ₽' },
+  black: { metal: 0x2a2a2c, rough: 0.34, dial: 0x0f0f10, index: 0xe9e4d8, price: '112 000 ₽' }
+};
+const target = {
+  metal: new THREE.Color(VARIANTS.steel.metal),
+  dial: new THREE.Color(VARIANTS.steel.dial),
+  index: new THREE.Color(VARIANTS.steel.index),
+  rough: VARIANTS.steel.rough
+};
+
+/* Сборка часов */
+const watch = new THREE.Group();
+scene.add(watch);
+const body = new THREE.Group();
+body.position.z = 2.0;
+watch.add(body);
+
+// Корпус (профиль вращения)
+const prof = [
+  [0, -0.55], [1.6, -0.55], [1.92, -0.42], [2.06, -0.1],
+  [2.04, 0.22], [1.9, 0.42], [1.78, 0.46], [1.7, 0.44], [1.69, 0.36]
+].map(([x, y]) => new THREE.Vector2(x, y));
+const caseGeo = new THREE.LatheGeometry(prof, 128);
+const caseMat = metal;
+caseGeo.rotateX(Math.PI / 2);
+body.add(new THREE.Mesh(caseGeo, metal));
+
+// Безель с насечкой
+const bezel = new THREE.Mesh(new THREE.TorusGeometry(1.79, 0.11, 24, 160), metal);
+bezel.position.z = 0.47;
+body.add(bezel);
+for (let i = 0; i < 120; i++) {
+  const a = (i / 120) * Math.PI * 2;
+  const n = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.06), metalBrushed);
+  n.position.set(Math.sin(a) * 1.9, Math.cos(a) * 1.9, 0.47);
+  n.rotation.z = -a;
+  body.add(n);
+}
+
+// Циферблат
+const dialGeo = new THREE.CylinderGeometry(1.7, 1.7, 0.04, 128);
+dialGeo.rotateX(Math.PI / 2);
+const dial = new THREE.Mesh(dialGeo, dialMat);
+dial.position.z = 0.4;
+body.add(dial);
+
+// Минутная разметка
+for (let i = 0; i < 60; i++) {
+  if (i % 5 === 0) continue;
+  const a = (i / 60) * Math.PI * 2;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.08, 0.01), indexMat);
+  m.position.set(Math.sin(a) * 1.58, Math.cos(a) * 1.58, 0.425);
+  m.rotation.z = -a;
+  body.add(m);
+}
+// Часовые индексы
+for (let i = 0; i < 12; i++) {
+  const a = (i / 12) * Math.PI * 2;
+  const pair = i === 0 ? [-0.06, 0.06] : [0];
+  pair.forEach(off => {
+    const idx = new THREE.Mesh(new THREE.BoxGeometry(i === 0 ? 0.07 : 0.08, i % 3 === 0 ? 0.36 : 0.26, 0.05), indexMat);
+    const r = i % 3 === 0 ? 1.28 : 1.33;
+    idx.position.set(Math.sin(a) * r + off, Math.cos(a) * r, 0.44);
+    idx.rotation.z = -a;
+    body.add(idx);
+  });
+}
+
+// Стрелки
+function hand(len, w, z, mat, tail = 0.18) {
+  const g = new THREE.BoxGeometry(w, len + tail, 0.025);
+  g.translate(0, (len - tail) / 2, 0);
+  const pivot = new THREE.Group();
+  pivot.position.z = z;
+  pivot.add(new THREE.Mesh(g, mat));
+  body.add(pivot);
+  return pivot;
+}
+const hourHand = hand(0.82, 0.09, 0.47, indexMat);
+const minHand = hand(1.28, 0.065, 0.5, indexMat);
+const secHand = hand(1.45, 0.022, 0.53, secondMat, 0.35);
+const capGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.04, 32);
+capGeo.rotateX(Math.PI / 2);
+const cap = new THREE.Mesh(capGeo, secondMat);
+cap.position.z = 0.55;
+body.add(cap);
+
+// Стекло
+const glassGeo = new THREE.CylinderGeometry(1.72, 1.72, 0.06, 128);
+glassGeo.rotateX(Math.PI / 2);
+const glass = new THREE.Mesh(glassGeo, glassMat);
+glass.position.z = 0.58;
+body.add(glass);
+
+// Заводная головка
+const crownGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.3, 48);
+crownGeo.rotateZ(Math.PI / 2);
+const crown = new THREE.Mesh(crownGeo, metal);
+crown.position.set(2.2, 0, -0.05);
+body.add(crown);
+for (let i = 0; i < 24; i++) {
+  const a = (i / 24) * Math.PI * 2;
+  const r = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.03), metalBrushed);
+  r.position.set(2.2, Math.sin(a) * 0.245, -0.05 + Math.cos(a) * 0.245);
+  body.add(r);
+}
+const stemGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.16, 24);
+stemGeo.rotateZ(Math.PI / 2);
+const stem = new THREE.Mesh(stemGeo, metal);
+stem.position.set(2.05, 0, -0.05);
+body.add(stem);
+
+// Ушки
+[[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sy]) => {
+  const lug = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.7, 0.42, 3, 0.08), metal);
+  lug.position.set(sx * 0.98, sy * 2.0, -0.12);
+  lug.rotation.x = sy * 0.15;
+  body.add(lug);
+});
+
+// Браслет: звенья по дуге вокруг запястья
+const R = 2.85, C = 1.75;
+const startY = 2.3;
+const th0 = Math.asin(startY / R);
+const arc = R * (Math.PI * 2 - 2 * th0);
+const linkCount = Math.round(arc / 0.3);
+const linkGeoC = new RoundedBoxGeometry(0.6, 0.29, 0.2, 3, 0.06);
+const linkGeoS = new RoundedBoxGeometry(0.58, 0.29, 0.17, 3, 0.06);
+for (let i = 0; i <= linkCount; i++) {
+  const th = th0 + (i / linkCount) * (Math.PI * 2 - 2 * th0);
+  const y = R * Math.sin(th);
+  const z = -C + R * Math.cos(th) - 0.3;
+  [-0.62, 0, 0.62].forEach(x => {
+    const link = new THREE.Mesh(x === 0 ? linkGeoC : linkGeoS, x === 0 ? metalBrushed : metal);
+    link.position.set(x, y, z);
+    link.rotation.x = -th;
+    body.add(link);
+  });
+}
+
+watch.rotation.set(0.25, -0.5, 0);
+
+/* Управление мышью / пальцем */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enableZoom = false;
+controls.enablePan = false;
+controls.rotateSpeed = 0.75;
+controls.autoRotate = !reduceMotion;
+controls.autoRotateSpeed = 1.4;
+
+let idleTimer;
+controls.addEventListener('start', () => {
+  controls.autoRotate = false;
+  stage.classList.add('dragging');
+  hint.classList.add('hidden');
+  clearTimeout(idleTimer);
+});
+controls.addEventListener('end', () => {
+  stage.classList.remove('dragging');
+  idleTimer = setTimeout(() => { if (!reduceMotion) controls.autoRotate = true; }, 3500);
+});
+
+/* Переключение отделки */
+document.querySelectorAll('.variant').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.variant').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+    const v = VARIANTS[btn.dataset.v];
+    target.metal.set(v.metal);
+    target.dial.set(v.dial);
+    target.index.set(v.index);
+    target.rough = v.rough;
+    const priceEl = document.getElementById('price');
+    if (window.gsap) {
+      gsap.fromTo(priceEl, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out' });
+    }
+    priceEl.textContent = v.price;
+    spin = 1;
+  });
+});
+let spin = 0;
+
+/* Размер */
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.fov = 30;
+  const dist = w / h < 0.8 ? 19 : w / h < 1.1 ? 16 : 14;
+  camera.position.setLength(dist);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+/* Цикл */
+const clock = new THREE.Clock();
+let intro = 0;
+requestAnimationFrame(() => stage.classList.add('ready'));
+
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  // Вступление
+  intro = Math.min(intro + dt / 2.2, 1);
+  const e = 1 - Math.pow(1 - intro, 4);
+  watch.scale.setScalar(0.82 + 0.18 * e);
+
+  // Вращение при смене отделки
+  if (spin > 0) {
+    spin = Math.max(spin - dt / 1.1, 0);
+    const k = 1 - Math.pow(1 - (1 - spin), 3);
+    watch.rotation.y = -0.5 + Math.PI * 2 * k;
+    if (spin === 0) watch.rotation.y = -0.5;
+  } else {
+    watch.rotation.y = -0.5 + (1 - e) * -1.4;
+  }
+  // Наклон от скролла
+  watch.rotation.x = 0.25 + scrollTilt * 0.9;
+  watch.position.y = scrollTilt * 1.2;
+
+  // Плавная смена цветов
+  const lf = 1 - Math.pow(0.001, dt);
+  metal.color.lerp(target.metal, lf);
+  metalBrushed.color.lerp(target.metal, lf);
+  dialMat.color.lerp(target.dial, lf);
+  indexMat.color.lerp(target.index, lf);
+  metal.roughness += (target.rough - metal.roughness) * lf;
+
+  // Реальное время на стрелках
+  const now = new Date();
+  const s = now.getSeconds() + now.getMilliseconds() / 1000;
+  const m = now.getMinutes() + s / 60;
+  const h = (now.getHours() % 12) + m / 60;
+  secHand.rotation.z = -(s / 60) * Math.PI * 2;
+  minHand.rotation.z = -(m / 60) * Math.PI * 2;
+  hourHand.rotation.z = -(h / 12) * Math.PI * 2;
+
+  controls.update();
+
+  const az = Math.round(THREE.MathUtils.radToDeg(controls.getAzimuthalAngle()));
+  const pol = Math.round(THREE.MathUtils.radToDeg(controls.getPolarAngle()) - 90);
+  readout.textContent = `${az}° · ${pol}°`;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>
